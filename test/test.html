@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<title>Unit test for profiler.js</title>
+  	<script src="../profiler.js"></script>
+  	<link rel="stylesheet" href="qunit.css" type="text/css" media="screen" />
+	<script type="text/javascript" src="qunit.js"></script>
+
+  	<script>
+
+  		QUnit.log = function(result, message) {
+    		if (window.console && window.console.log) {
+      			window.console.log(result +' :: '+ message);
+    		}
+  		}
+
+		function test1() {ok( true, "The test1 function has been called" );};
+
+		var obj = {};
+		obj.test = function(){ok(true, "The obj.test function has been called");};
+		obj.test2 = function(){ok(true, "The obj.test2 function has been called");};
+		obj["sd.(§è!test"] = function(){ok(true, 'The sd.(obj["sd.(§è!test"] function has been called');};
+		
+		function to_benchmark_fast() {
+			for (var i = 0; i++ < 10000;);
+		}
+		
+		function to_benchmark_slow() {
+			for (var i = 0; i++ < 10000;)
+				document.getElementsByTagName("body");
+			ok(true, "to_benchmark_slow has been called");
+		}
+		
+		window.onload = function() {
+			module("profiler");  
+			test("profile a function", function() {
+				expect(20);
+				
+				profiler.profile("test1");
+				
+				ok(test1._is_profiled, "the function has been instrumented");
+				
+				test1();
+				test1();
+				test1();
+				equals(profiler.getReports().length, 1, "we generated 1 report");
+				
+				test1("test");
+				test1("test");
+				test1("test");
+				test1("test2");
+				equals(profiler.getReports().length, 3, "we generated 3 reports");
+				
+				ok(profiler.getReports("test1(\"test2\")"), "we get one report");
+				
+				var report = profiler.getReports('test1("test")')
+				equals(report.name, 'test1("test")', "we got the right report");
+				
+				equals(report.runs, 3, "the report contains the number of run");
+				ok(typeof report.mean !== "undefined", "the report contains the number of mean");
+				ok(typeof report.min !== "undefined", "the report contains the number of min");
+				ok(typeof report.max !== "undefined", "the report contains the number of max");
+				ok(typeof report.sum !== "undefined", "the report contains the number of sum");
+				ok(typeof report.geometric_mean !== "undefined", "the report contains the number of geometric_mean");
+				ok(typeof report.median !== "undefined", "the report contains the number of median");
+				ok(typeof report.variance !== "undefined", "the report contains the number of variance");
+				
+			});
+			
+			test("profile an object", function() {
+				expect(6);
+				
+				profiler.profile("obj");
+				
+				ok(obj.test._is_profiled, "the function has been instrumented");
+				ok(obj["test2"]._is_profiled, "the function has been instrumented");
+				ok(obj["sd.(§è!test"]._is_profiled, "the function has been instrumented");
+				
+				obj.test2();
+				obj["test"]();
+				obj["sd.(§è!test"]();
+			});
+
+			module("profiler.benchmark");
+
+			asyncTest("benchmark_slow_function", function() {
+				expect(14);
+		    	profiler.benchmark.benchmark_slow_function(10, "to_benchmark_slow", function(func_name, report) {
+					equals(func_name, "to_benchmark_slow", "we got the right function name");
+					ok(report, "We received the report");
+					equals(report.runs, 10, "We received the right number of runs");
+					ok(true, "Benchmark_slow_function finished.");
+					start();
+				});
+			});
+			
+			asyncTest("benchmark_fast_function", function() {
+				expect(4);
+		    	profiler.benchmark.benchmark_fast_function("to_benchmark_fast", function(func_name, report) {
+					equals(func_name, "to_benchmark_fast", "we got the right function name");
+					ok(report, "We received the report");
+					ok(report.runs > 0, "We received a number of run bigger than 0");
+					ok(true, "Benchmark_fast_function finished.");
+					start();
+				});
+			});
+
+		};
+		
+  	</script>
+  
+</head>
+<body>
+  <h1 id="qunit-header">Unit test for profiler.js</h1>
+ <h2 id="qunit-banner"></h2>
+ <h2 id="qunit-userAgent"></h2>
+ <ol id="qunit-tests"></ol>
+</body>
+</html>
