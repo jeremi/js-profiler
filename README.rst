@@ -3,8 +3,10 @@ js-profiler README
 ##################
 
 This javascript library will help you to profile and benchmark your javascript. It has no external dependencies.
+Tested with Firefox 3.5, IE7 and Chrome. It should also work on the other browsers.
 
 This is at the state of Beta, but it is working. If you encounter any bug, please report them.
+
 
 To profile
 ==========
