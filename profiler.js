@@ -21,19 +21,26 @@ var profiler = profiler || (function() {
 		return diff;
 	}
 	
-	function instrument(name) {
+	function instrument(name, max_depth) {
 		//to avoid conflict of name, we should prefix our var
 		var func, new_func;
+		
+		if (max_depth === undefined) {
+		    max_depth = 4;
+		} else if (max_depth < 0) {
+		    return;
+		}
+		
 		func = getFunction(name);
 		
-		if (!func || func._is_profiled) {
+		if (!func || func._is_profiled || func.nodeName) {
 			return;
 		}
 		
 		if (typeof func === "object") {
 			for (member in func) {
 				if (member !== "prototype") {
-					instrument(name + "[\"" + member + "\"]");
+					instrument(name + "[\"" + member + "\"]", max_depth - 1);
 				} 
 			}
 			return;
@@ -230,9 +237,9 @@ var profiler = profiler || (function() {
 		start: start_profiling,
 		stop: stop_profiling,
 		
-		profile: function(/* String */name) {
+		profile: function(/* String */name, max_depth) {
 		    try {
-			    instrument(name);
+			    instrument(name, max_depth);
 		    } finally {
 			    if (window.console && console.log) {
 		            console.log("Profiling of " + name + " ready");

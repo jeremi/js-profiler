@@ -20,7 +20,21 @@
 		var obj = {};
 		obj.test = function(){ok(true, "The obj.test function has been called");};
 		obj.test2 = function(){ok(true, "The obj.test2 function has been called");};
-		obj["sd.(§è!test"] = function(){ok(true, 'The sd.(obj["sd.(§è!test"] function has been called');};
+		obj["sd.(§è!test"] = function(){ok(true, 'The obj["sd.(§è!test"] function has been called');};
+		
+		var test_node = {};
+		
+		var test_max_depth = {
+		    depth1: {
+		        depth2: {
+		            depth3: {
+		                f: function(){}
+		            },
+		            f: function(){}
+		        }
+		    }
+		}
+		
 		
 		function to_benchmark_fast() {
 			for (var i = 0; i++ < 10000;);
@@ -80,6 +94,29 @@
 				obj.test2();
 				obj["test"]();
 				obj["sd.(§è!test"]();
+			});
+
+            test("profile max depth", function() {
+				expect(2);
+				
+				profiler.profile("test_max_depth", 3);
+				
+				ok(test_max_depth.depth1.depth2.f._is_profiled, "the function has been instrumented");
+				ok(!test_max_depth.depth1.depth2.depth3.f._is_profiled, "the function has not been instrumented");
+			});
+			
+			test("profile skip Node", function() {
+			    var bd = document.getElementsByTagName("body")[0];
+				expect(2);
+				
+				bd.aa = function(){};
+				
+				test_node["node"] = bd;
+				test_node["zz"] = function(){};
+				
+				profiler.profile("test_node");
+				ok(test_node.zz._is_profiled, "the function has been instrumented");
+				ok(!test_node.node.aa._is_profiled, "the function has not been instrumented");
 			});
 
 			module("profiler.benchmark");
