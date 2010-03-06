@@ -1,19 +1,26 @@
+/*
+ * 
+ * 
+ * This has been (largely) inspired by :
+ * * http://ejohn.org/blog/javascript-benchmark-quality/
+ * * YUI profiler
+ */
+
 var jsTools = jsTools || {};
 jsTools._utils = jsTools._utils || {};
 
 jsTools._utils.parseName = function(name) {
-	var owner, func_name;
+	var owner, func;
 	if (name.indexOf("#") !== -1) {
 		name = name.substring(0, name.indexOf("#"))
 	}
 	if (name.indexOf(".") === -1) {
-		func_name = name;
 		owner = window;
 	} else {
 		owner = eval(name.substring(0, name.lastIndexOf(".")));
-		func_name = name.substring(name.lastIndexOf(".") + 1);
 	}
-	return [owner, func_name];
+	func = eval(name);
+	return [owner, func];
 };
 
 jsTools._utils.process_stats = function(times) {
@@ -74,9 +81,8 @@ jsTools.profile = (function() {
 		start_times[call_id] = (new Date).getTime();
 	}
 	
-	function stop_profiling(/* String */ call_id, skip_record) {
+	function stop_profiling(/* String */ call_id) {
 		var diff = (new Date).getTime() - start_times[call_id];
-		//add_time(report_id, diff);
 		logCall(call_id, diff);
 		start_times[call_id] = undefined;
 		return diff;
@@ -84,19 +90,17 @@ jsTools.profile = (function() {
 	
 	function instrument(name) {
 		//to avoid conflict of name, we should prefix our var
-		var owner, func_name, func;
+		var owner, func, new_func;
+		[owner, func] = jsTools._utils.parseName(name);
 		
-		[owner, func_name] = jsTools._utils.parseName(name);
-		
-		func = owner[func_name];
-		if (func._is_profiled) {
+		if (!func || func._is_profiled) {
 			return;
 		}
 		
 		if (typeof func === "object") {
 			for (member in func) {
 				if (member !== "prototype") {
-					instrument(name + "." + member);
+					instrument(name + "[\"" + member + "\"]");
 				} 
 			}
 			return;
@@ -105,20 +109,22 @@ jsTools.profile = (function() {
 		if (typeof func !== "function") {
 			return;
 		}
-		
-		owner[func_name] = function() {
-			var time,
+		new_func = function() {
+			var res, time,
 				call_id = name + "(" + formatArgs(arguments) + ")";
-			
 			start_profiling(call_id);
 			try {
-				func.apply(this, arguments);
+				res = func.apply(this, arguments);
 			} finally {
 				stop_profiling(call_id);
 			}
+			return res;
 		}
-		owner[func_name]._original = func;
-		owner[func_name]._is_profiled = true;
+		new_func._original = func;
+		new_func._is_profiled = true;
+		
+		//we replace the old function by our modified one
+		eval(name + "=new_func;");
 	}
 	
 	function logCall(call_id, time) {
@@ -178,15 +184,23 @@ jsTools.profile = (function() {
 		stop: stop_profiling,
 		
 		profile: function(/* String */name) {
-			instrument(name);
+		    try {
+			    instrument(name);
+		    } finally {
+			    if (console && console.log) {
+		            console.log("Profiling of " + name + " ready");
+		        }
+	        }
 			return this;
 		},
 		
 		getReports:function(/* String */ name) {
 			if (name === undefined) {
-				var stats = {};
+				var stats = [], report;
 				for (call_id in calls) {
-					stats[call_id] = jsTools._utils.process_stats(calls[call_id]);
+				    report = jsTools._utils.process_stats(calls[call_id]);
+				    report.name = call_id;
+					stats.push(report);
 				}
 				return stats;
 			}
@@ -201,7 +215,27 @@ jsTools.profile = (function() {
 		},
 		
 		displayReport: function() {
+			var content = "<table style='text-align:left;background:#FFF;color:#000;font-size:10px;width:1024px;overflow:auto;padding:8px;margin:10px;'><tr style='font-size:12px;'><td>Name</td><td>runs</td><td>sum</td><td>mean</td><td>min</td><td>max</td></tr>",
+			    reports = this.getReports(),
+			    report,
+			    content_el;
+
+			//we sort by mean
+			reports = reports.sort(function(a, b) {
+			    return b.mean - a.mean;
+			});
 			
+			for (report_id in reports) {
+			    report = reports[report_id];
+			    if (typeof report === 'object') {
+			        content = content + "<tr><td>" + report.name + "</td><td>" + report.runs + "</td><td>" + report.sum + "</td><td>" + Math.round(report.mean*100)/100  + "</td><td>" + Math.round(report.min*100)/100 + "</td><td>" + Math.round(report.max*100)/100 + "</td></tr>";
+			    }
+			    
+			}
+			content = content + "</table>";
+			content_el = document.createElement('div');
+			content_el.innerHTML = content;
+			document.getElementsByTagName("body")[0].appendChild(content_el);
 		}
 	}
 }())
@@ -209,10 +243,6 @@ jsTools.profile = (function() {
 jsTools.benchmark = (function() {
 	return {
 		
-		/*
-		 * This is made to benchmark fast function.
-		 * it has been largely inspired from http://ejohn.org/blog/javascript-benchmark-quality/
-		 */
 		benchmark_fast_function: function(/* String */func_name, /* Function */callback, /* Function */next) {
 			var res, owner, func, runs = [], r = 0;
 
@@ -273,5 +303,3 @@ jsTools.benchmark = (function() {
 		}
 	}
 }());
-
-
