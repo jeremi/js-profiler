@@ -31,6 +31,7 @@ profiler.benchmark.benchmark_fast_function("yourFunctionToBenchmark", function(f
 Thanks
 ======
 This has been (largely) inspired by :
+
 * http://ejohn.org/blog/javascript-benchmark-quality/
 * http://www.stevesouders.com/blog/2010/03/03/p3pc-google-analytics/
 * http://developer.yahoo.com/yui/profiler/
