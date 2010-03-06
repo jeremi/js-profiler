@@ -29,6 +29,9 @@ For the other functions you should better use the profiler.benchmark.benchmark_f
 
 profiler.benchmark.benchmark_fast_function("yourFunctionToBenchmark", function(func_name, report) {console.log(report);});
 
+Licence
+=======
+You may use this project under the terms of either the MIT License or the GNU General Public License (GPL) Version 2.
 
 Thanks
 ======

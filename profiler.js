@@ -1,9 +1,9 @@
 /*
- * TBD Licence
- * 
- * This has been (largely) inspired by :
- * * http://ejohn.org/blog/javascript-benchmark-quality/
- * * YUI profiler
+ * Profiler Library v0.2-SNAPSHOT
+ * http://github.com/jeremi/js-profiler
+ *
+ * Copyright 2010, Jeremi Joslin
+ * Dual licensed under the MIT or GPL Version 2 licenses.
  */
 
 var profiler = profiler || (function() {
