@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+	<head>
+		<title>test</title>
+		<script src="jsTools.js"></script>
+		
+		<script>
+			function to_benchmark_fast() {
+				for (var i = 0; i++ < 10000;);
+			}
+			
+			function to_benchmark_slow() {
+				for (var i = 0; i++ < 10000;)
+					document.getElementsByTagName("body");
+			}
+			
+			var toto = {};
+			
+			toto.to_profile = function() {
+				to_benchmark_slow();
+			}
+			
+			
+		</script>
+	</head>
+	<body>
+		
+	</body>
+</html>
