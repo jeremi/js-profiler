@@ -68,6 +68,9 @@ var profiler = profiler || (function() {
 	}
 	
 	function logCall(call_id, time) {
+        if (typeof time !== "number" || isNaN(time)) {
+            return;
+        }
 		if (!(call_id in calls)) {
 			calls[call_id] = [time];
 		} else {
