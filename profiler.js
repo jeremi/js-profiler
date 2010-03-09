@@ -238,6 +238,19 @@ var profiler = profiler || (function () {
         document.getElementsByTagName("body")[0].appendChild(content_el);
     }
     
+    function getFunctionName (func) {
+        var name = /\W*function\s+([\w\$]+)\(/.exec(func);
+        if(!name) {
+            return 'Anonymous Function';
+        }
+        return name[1];
+    }
+    
+    function resetValues () {
+        calls = [];
+        return this;
+    }
+    
     return {
         start: start_profiling,
         stop: stop_profiling,
@@ -259,14 +272,23 @@ var profiler = profiler || (function () {
         
         displayReport: displayReport,
         
+        resetValues: resetValues,
+        
         benchmark: {
 
-            benchmark_fast_function: function (/* String */func_name, /* Function */callback, /* Function */next) {
+            benchmark_fast_function: function (/* String */func_or_name, /* Function */callback, /* Function */next) {
                 var res, owner, func, runs = [], r = 0, n;
 
-                res = parseName(func_name);
-                owner = res[0];
-                func = res[1];
+                if (typeof func_or_name === "function") {
+                    owner = null;
+                    func = func_or_name; 
+                    func_name = getFunctionName(func);
+                } else {
+                    res = parseName(func_or_name);
+                    owner = res[0];
+                    func = res[1];
+                    func_name = func_or_name;
+                }
 
                 setTimeout(function () {
                     var start = (new Date()).getTime(), diff = 0;
@@ -294,11 +316,20 @@ var profiler = profiler || (function () {
             /*
              * You should use this function if you want to benchmark a function that is slow
              */
-            benchmark_slow_function: function (/* Integer */repeat, /* String */func_name, /* Function */callback, /* Function */next) {
-                var res, owner, func, i;
-                res = parseName(func_name);
-                owner = res[0];
-                func = res[1];
+            benchmark_slow_function: function (/* Integer */repeat, /* String */func_or_name, /* Function */callback, /* Function */next) {
+                var res, owner, func, i, func_name;
+                
+                if (typeof func_or_name === "function") {
+                    owner = null;
+                    func = func_or_name; 
+                    func_name = getFunctionName(func);
+                } else {
+                    res = parseName(func_or_name);
+                    owner = res[0];
+                    func = res[1];
+                    func_name = func_or_name;
+                }
+                
                 
                 setTimeout(function () {
                     for (i = 0; i < repeat; i += 1) {
@@ -312,7 +343,8 @@ var profiler = profiler || (function () {
                     }
                 }, 0);
             },
-
+            
+            resetValues: resetValues,
 
             getValues: getValues,
 

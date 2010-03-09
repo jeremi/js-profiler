@@ -51,7 +51,7 @@
 			test("profile a function", function() {
 				expect(20);
 				
-				profiler.profile("test1");
+				profiler.resetValues().profile("test1");
 				
 				ok(test1._is_profiled, "the function has been instrumented");
 				
@@ -85,7 +85,7 @@
 			test("profile an object", function() {
 				expect(6);
 				
-				profiler.profile("obj");
+				profiler.resetValues().profile("obj");
 				
 				ok(obj.test._is_profiled, "the function has been instrumented");
 				ok(obj["test2"]._is_profiled, "the function has been instrumented");
@@ -99,13 +99,13 @@
             test("profile max depth", function() {
 				expect(2);
 				
-				profiler.profile("test_max_depth", 3);
+				profiler.resetValues().profile("test_max_depth", 3);
 				
 				ok(test_max_depth.depth1.depth2.f._is_profiled, "the function has been instrumented");
 				ok(!test_max_depth.depth1.depth2.depth3.f._is_profiled, "the function has not been instrumented");
 			});
 			
-			test("profile skip Node", function() {
+			test("profile skip HTML Node", function() {
 			    var bd = document.getElementsByTagName("body")[0];
 				expect(2);
 				
@@ -114,7 +114,7 @@
 				test_node["node"] = bd;
 				test_node["zz"] = function(){};
 				
-				profiler.profile("test_node");
+				profiler.resetValues().profile("test_node");
 				ok(test_node.zz._is_profiled, "the function has been instrumented");
 				ok(!test_node.node.aa._is_profiled, "the function has not been instrumented");
 			});
@@ -123,7 +123,7 @@
 
 			asyncTest("benchmark_slow_function", function() {
 				expect(14);
-		    	profiler.benchmark.benchmark_slow_function(10, "to_benchmark_slow", function(func_name, report) {
+		    	profiler.benchmark.resetValues().benchmark_slow_function(10, "to_benchmark_slow", function(func_name, report) {
 					equals(func_name, "to_benchmark_slow", "we got the right function name");
 					ok(report, "We received the report");
 					equals(report.runs, 10, "We received the right number of runs");
@@ -132,9 +132,39 @@
 				});
 			});
 			
+			asyncTest("benchmark_slow_function with a named function as parameter", function() {
+				expect(14);
+		    	profiler.benchmark.resetValues().benchmark_slow_function(10, function to_benchmark_slow() {
+        			    for (var i = 0; i++ < 10000;)
+        				    document.getElementsByTagName("body");
+        			    ok(true, "to_benchmark_slow has been called");
+        		    }, function(func_name, report) {
+					    equals(func_name, "to_benchmark_slow", "we got the right function name");
+					    ok(report, "We received the report");
+					    equals(report.runs, 10, "We received the right number of runs");
+					    ok(true, "Benchmark_slow_function finished.");
+					    start();
+				});
+			});
+			
+			asyncTest("benchmark_slow_function with an anonymous function as parameter", function() {
+				expect(14);
+		    	profiler.benchmark.resetValues().benchmark_slow_function(10, function() {
+        			    for (var i = 0; i++ < 10000;)
+        				    document.getElementsByTagName("body");
+        			    ok(true, "to_benchmark_slow has been called");
+        		    }, function(func_name, report) {
+					    equals(func_name, "Anonymous Function", "we got the right function name");
+					    ok(report, "We received the report");
+					    equals(report.runs, 10, "We received the right number of runs");
+					    ok(true, "Benchmark_slow_function finished.");
+					    start();
+				});
+			});
+			
 			asyncTest("benchmark_fast_function", function() {
 				expect(4);
-		    	profiler.benchmark.benchmark_fast_function("to_benchmark_fast", function(func_name, report) {
+		    	profiler.benchmark.resetValues().benchmark_fast_function("to_benchmark_fast", function(func_name, report) {
 					equals(func_name, "to_benchmark_fast", "we got the right function name");
 					ok(report, "We received the report");
 					ok(report.runs > 0, "We received a number of run bigger than 0");
